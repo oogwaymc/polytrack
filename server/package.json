@@ -1,0 +1,13 @@
+{
+  "name": "polytrack-multiplayer-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Matchmaking (signaling) server for self-hosted PolyTrack multiplayer",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
