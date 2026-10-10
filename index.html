@@ -23,22 +23,25 @@
   .card { background: var(--panel); border: 2px solid var(--edge); padding: 22px 20px 20px; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
   h1 { margin: 0 0 4px; font-style: italic; font-size: 24px; letter-spacing: .5px; }
   p.sub { margin: 0 0 18px; color: var(--muted); font-style: italic; font-size: 15px; }
-  form { display: flex; flex-direction: column; gap: 12px; }
-  input {
-    font: inherit; font-size: 18px; color: var(--text); background: #11173d; border: 2px solid var(--edge);
-    padding: 12px 14px; outline: none; text-align: center; letter-spacing: 1px; width: 100%;
+  .dots { display: flex; gap: 14px; justify-content: center; margin: 4px 0 6px; }
+  .dots i { width: 16px; height: 16px; border: 2px solid var(--edge); transform: skewX(-8deg); transition: background .12s, border-color .12s; }
+  .dots i.on { background: var(--accent); border-color: var(--accent); }
+  .card.bad .dots i { border-color: var(--error); }
+  .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 8px auto 0; user-select: none; -webkit-user-select: none; }
+  .pad button {
+    font: inherit; font-style: italic; font-size: 28px; color: var(--text); background: var(--panel-2); border: 2px solid var(--edge);
+    height: 64px; cursor: pointer; transform: skewX(-8deg); touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    transition: background .1s, color .1s, transform .08s;
   }
-  input:focus { border-color: var(--accent); }
-  button {
-    font: inherit; font-style: italic; font-size: 22px; color: var(--panel-2); background: var(--accent); border: 0;
-    padding: 12px; cursor: pointer; transform: skewX(-8deg); transition: filter .15s, transform .15s;
-  }
-  button:hover { filter: brightness(1.08); }
-  button:active { transform: skewX(-8deg) scale(.98); }
-  .err { min-height: 20px; color: var(--error); font-style: italic; font-size: 15px; margin: 2px 0 0; }
+  .pad button:hover { background: #2b3577; }
+  .pad button:active, .pad button.press { background: var(--accent); border-color: var(--accent); color: var(--panel-2); transform: skewX(-8deg) scale(.96); }
+  .pad button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .pad .fn { font-size: 16px; color: var(--muted); background: transparent; }
+  .pad .del { font-size: 24px; }
+  .err { min-height: 20px; color: var(--error); font-style: italic; font-size: 15px; margin: 10px 0 0; }
   .shake { animation: shake .35s; }
   @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
-  label.remember { display: flex; gap: 8px; align-items: center; justify-content: center; color: var(--muted); font-size: 14px; font-style: italic; cursor: pointer; }
+  label.remember { display: flex; gap: 8px; align-items: center; justify-content: center; color: var(--muted); font-size: 14px; font-style: italic; cursor: pointer; margin-top: 14px; }
   label.remember input { width: auto; accent-color: var(--accent); }
   footer { margin-top: 18px; color: var(--muted); font-size: 12px; opacity: .7; }
 </style>
@@ -48,30 +51,33 @@
   <img class="logo" src="images/logo.svg" alt="PolyTrack">
   <div class="card" id="card">
     <h1>Private server</h1>
-    <p class="sub">Enter the password to race</p>
-    <form id="f" autocomplete="off">
-      <input id="pw" type="password" placeholder="Password" aria-label="Password" autofocus>
-      <label class="remember"><input id="rem" type="checkbox" checked> Remember me on this device</label>
-      <button type="submit">Enter</button>
-      <div class="err" id="err" role="alert"></div>
-    </form>
+    <p class="sub">Enter the passcode to race</p>
+    <div class="dots" id="dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="pad" id="pad">
+      <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+      <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+      <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+      <button type="button" class="fn" data-k="c" aria-label="Clear">Clear</button><button type="button" data-k="0">0</button><button type="button" class="fn del" data-k="d" aria-label="Delete">&#9003;</button>
+    </div>
+    <div class="err" id="err" role="alert"></div>
+    <label class="remember"><input id="rem" type="checkbox" checked> Remember me on this device</label>
   </div>
   <footer>PolyTrack by Kodub</footer>
 </main>
 <script>
 (function () {
-  var HASH = "ada8bc16ca776ddfe6e43ab4db48fbc83d0af7df3dd933680883a790a9d3ceb5";
+  var HASH = "b3786e141d65638ad8a98173e26b5f6a53c927737b23ff31fb1843937250f44b", LEN = 5;
   function go() { location.replace("game.html" + location.search); }
   try { if (localStorage.getItem("pt_auth") === HASH || sessionStorage.getItem("pt_auth") === HASH) return go(); } catch (e) {}
-
   async function sha256(s) {
     var buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
     return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
   }
-  var f = document.getElementById("f"), pw = document.getElementById("pw"), err = document.getElementById("err"), card = document.getElementById("card");
-  f.addEventListener("submit", async function (e) {
-    e.preventDefault();
-    var h = await sha256(pw.value.trim().toLowerCase());
+  var dots = document.querySelectorAll("#dots i"), err = document.getElementById("err"), card = document.getElementById("card"), code = "", busy = false;
+  function draw() { for (var i = 0; i < dots.length; i++) dots[i].classList.toggle("on", i < code.length); }
+  async function check() {
+    busy = true;
+    var h = await sha256(code);
     if (h === HASH) {
       try {
         if (document.getElementById("rem").checked) localStorage.setItem("pt_auth", HASH);
@@ -79,10 +85,21 @@
       } catch (e) {}
       go();
     } else {
-      err.textContent = "Wrong password";
-      pw.value = ""; pw.focus();
-      card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
+      err.textContent = "Wrong passcode";
+      card.classList.add("bad"); card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
+      setTimeout(function () { code = ""; draw(); card.classList.remove("bad"); busy = false; }, 450);
     }
+  }
+  function key(k) {
+    if (busy) return;
+    if (k === "c") code = ""; else if (k === "d") code = code.slice(0, -1); else if (code.length < LEN) { code += k; err.textContent = ""; }
+    draw(); if (code.length === LEN) setTimeout(check, 120);
+  }
+  document.getElementById("pad").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) key(b.dataset.k); });
+  document.addEventListener("keydown", function (e) {
+    var k = e.key, id = /^[0-9]$/.test(k) ? k : k === "Backspace" ? "d" : (k === "Escape" || k === "Delete") ? "c" : null;
+    if (!id) return; e.preventDefault(); key(id);
+    var b = document.querySelector('#pad [data-k="' + id + '"]'); if (b) { b.classList.add("press"); setTimeout(function () { b.classList.remove("press"); }, 110); }
   });
 })();
 </script>
