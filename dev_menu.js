@@ -1,4 +1,4 @@
-// PolyTrack secret dev menu: type 2411 (or 24119) while playing to open/close.
+// PolyTrack secret dev menu: type 2411 (or 24119) while playing, or tap with three fingers on a phone, to open/close.
 (function () {
   var S = { speed: 1, fake: null, boost: 1 };
 
@@ -135,4 +135,11 @@
       panel.classList.toggle("open");
     }
   }, true);
+  // On phones and tablets: tap the screen with three fingers at once to open/close
+  window.addEventListener("touchstart", function (e) {
+    if (e.touches.length === 3) {
+      if (!panel) panel = build();
+      panel.classList.toggle("open");
+    }
+  }, { passive: true, capture: true });
 })();
